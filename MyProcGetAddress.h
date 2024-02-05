@@ -1,7 +1,8 @@
 #pragma once
 
-#include "pch.h"
+#include <Windows.h>
 #include <string>
+#include <codecvt> //for unicode to ascii conversion
 
 typedef struct _UNICODE_STRING UNICODE_STRING;
 typedef struct _LDR_MODULE LDR_MODULE;

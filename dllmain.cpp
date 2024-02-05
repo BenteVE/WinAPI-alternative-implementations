@@ -1,16 +1,9 @@
-/*
-	PROJECT SETTINGS:
-		- MICROSOFT DETOURS:
-			Linker => Input => Additional Dependencies => detoursX86.lib
-			VC++ Directories => Library Directories => Add /lib folder
-*/
-
-
-#include "pch.h"
+#include <Windows.h>
 #include "detours.h"
+
 #include <string>
 #include "MyProcGetAddress.h"
-#include "ErrorMessageBox.h"
+
 /*--------------------------------------------------
 		Kernel32.dll WriteFile hook
 ----------------------------------------------------*/

@@ -3,11 +3,7 @@
 * We try to find the address of a real function through the PEB lists
 */
 
-#include "pch.h"
-#include <string>
-#include <codecvt> //for unicode to ascii conversion
 #include "MyProcGetAddress.h"
-#include "ErrorMessageBox.h"
 
 // format typedef struct myStructDefinition{struct info} myStruct, *myStructPointer;
 // (common C idiom to avoid having to write "struct S")
@@ -279,7 +275,6 @@ FARPROC createHook(LPCSTR dllName, LPCSTR functionName) {
 
 	// Check if the module handle is retrieved correctly
 	if (moduleHandle == nullptr) {
-		showErrorMessageBox(Error::handle, dllName, functionName);
 		return NULL;
 	}
 
@@ -287,7 +282,6 @@ FARPROC createHook(LPCSTR dllName, LPCSTR functionName) {
 
 	// Check if the ordinal is retrieved correctly
 	if (ordinal == 0xFFFFFFFF) {
-		showErrorMessageBox(Error::ordinal, dllName, functionName);
 		return NULL;
 	}
 
@@ -295,7 +289,6 @@ FARPROC createHook(LPCSTR dllName, LPCSTR functionName) {
 
 	// Check if the Address is retrieved correctly
 	if (trueFunction == nullptr) {
-		showErrorMessageBox(Error::getProcAddress, dllName, functionName);
 		return NULL;
 	}
 
