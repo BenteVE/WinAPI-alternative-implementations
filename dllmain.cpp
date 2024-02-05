@@ -1,25 +1,10 @@
 #include <Windows.h>
 #include "detours.h"
 
-#include <string>
 #include "MyProcGetAddress.h"
+#include "Console.h"
 
-/*--------------------------------------------------
-		Kernel32.dll WriteFile hook
-----------------------------------------------------*/
-
-typedef BOOL(WINAPI* TrueWriteFile)(HANDLE, LPCVOID, DWORD, LPDWORD, LPOVERLAPPED);
-
-TrueWriteFile trueWritefile = NULL;
-
-// The function we will execute instead of the real WriteFile function
-BOOL WINAPI hookedWriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped)
-{
-	const char* pBuf = "Your original text was replaced by the hooked function!";
-	return trueWritefile(hFile, pBuf, 55, lpNumberOfBytesWritten, lpOverlapped);
-}
-
-
+Console console;
 
 /*--------------------------------------------------
 		User32.dll MessageBox hook
@@ -28,9 +13,8 @@ typedef int(WINAPI* TrueMessageBox)(HWND, LPCTSTR, LPCTSTR, UINT);
 
 TrueMessageBox trueMessageBox = NULL;
 
-BOOL WINAPI hookedMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType)
+BOOL WINAPI MessageBoxHook(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType)
 {
-	//LPCTSTR lpTextChanged = L"This messagebox is also changed";
 	LPCTSTR lpCaptionChanged = L"Hooked MessageBox";
 	return trueMessageBox(hWnd, lpText, lpCaptionChanged, uType);
 }
@@ -38,30 +22,31 @@ BOOL WINAPI hookedMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT 
 /*--------------------------------------------------
 		GDI32.dll SetTextColor hook
 ----------------------------------------------------*/
-typedef int(WINAPI* TrueSetTextColor)(HDC, COLORREF);
+typedef COLORREF(WINAPI* TrueSetTextColor)(HDC, COLORREF);
 
 TrueSetTextColor trueSetTextColor = NULL;
 
-BOOL WINAPI hookedSetTextColor(HDC hdc, COLORREF color)
+BOOL WINAPI SetTextColorHook(HDC hdc, COLORREF color)
 {
-	return trueSetTextColor(hdc, 0x00FF0000); // set color rgbBlue
+	//fprintf(console.stream, "SetTextColor for Handle Device context: %p\n", hdc);
+	return trueSetTextColor(hdc, 0x00FF0000); // rgb color blue
 }
 
 /*--------------------------------------------------
 		ntdll.dll NtCreateFile hook
 ----------------------------------------------------*/
 #include <winternl.h>
-int ntCreateFileCount = 0;
+
 typedef NTSTATUS(WINAPI* TrueNtCreateFile)(PHANDLE FileHandle, ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocationSize,
 	ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer, ULONG EaLength);
 
 TrueNtCreateFile trueNtCreateFile = NULL;
 
-BOOL WINAPI hookedNtCreateFile(PHANDLE FileHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK
+BOOL WINAPI NtCreateFileHook(PHANDLE FileHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK
 	IoStatusBlock, PLARGE_INTEGER AllocationSize, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer, ULONG EaLength)
 {
-	ntCreateFileCount++;
+	//fprintf(console.stream, "NtCreateFile created file with handle: %p\n", *FileHandle);
 	return trueNtCreateFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes, ShareAccess, CreateDisposition, CreateOptions, EaBuffer, EaLength);
 }
 
@@ -75,11 +60,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
 	{
-
-		//Get addresses of true functions
-		trueWritefile = (TrueWriteFile)createHook("kernel32.dll", "WriteFile");
-		if (trueWritefile == NULL)
-			break;
+		if (!console.open()) {
+			// Indicate DLL loading failed
+			return FALSE;
+		}
 
 		trueMessageBox = (TrueMessageBox)createHook("user32.dll", "MessageBoxW"); //Notepad++ 32-bit uses MessageBoxW
 		if (trueMessageBox == NULL)
@@ -98,14 +82,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		DetourUpdateThread(GetCurrentThread());
 
 		// Attach all detours
-		DetourAttach(&(PVOID&)trueWritefile, hookedWriteFile);
-		DetourAttach(&(PVOID&)trueMessageBox, hookedMessageBox);
-		DetourAttach(&(PVOID&)trueSetTextColor, hookedSetTextColor);
-		DetourAttach(&(PVOID&)trueNtCreateFile, hookedNtCreateFile);
+		DetourAttach(&(PVOID&)trueMessageBox, MessageBoxHook);
+		DetourAttach(&(PVOID&)trueSetTextColor, SetTextColorHook);
+		DetourAttach(&(PVOID&)trueNtCreateFile, NtCreateFileHook);
 
 		LONG lError = DetourTransactionCommit();
 		if (lError != NO_ERROR) {
-			MessageBox(HWND_DESKTOP, L"Failed to detour", L"ATTACH FAILED", MB_OK);
+			fprintf(console.stream, "Failed to attach the hooks\n");
 			return FALSE;
 		}
 	}
@@ -117,21 +100,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		DetourUpdateThread(GetCurrentThread());
 
 		//Detach all detours
-		DetourDetach(&(PVOID&)trueWritefile, hookedWriteFile);
-		DetourDetach(&(PVOID&)trueMessageBox, hookedMessageBox);
-		DetourDetach(&(PVOID&)trueSetTextColor, hookedSetTextColor);
-		DetourDetach(&(PVOID&)trueNtCreateFile, hookedNtCreateFile);
+		DetourDetach(&(PVOID&)trueMessageBox, MessageBoxHook);
+		DetourDetach(&(PVOID&)trueSetTextColor, SetTextColorHook);
+		DetourDetach(&(PVOID&)trueNtCreateFile, NtCreateFileHook);
 
 		LONG lError = DetourTransactionCommit();
 		if (lError != NO_ERROR) {
-			MessageBox(HWND_DESKTOP, L"Failed to detour", L"DETACH FAILED", MB_OK);
+			fprintf(console.stream, "Failed to detach the hooks\n");
 			return FALSE;
 		}
-
-		// print NtCreateFile execution count
-		wchar_t buffer[256];
-		wsprintfW(buffer, L"%d", ntCreateFileCount);
-		MessageBox(HWND_DESKTOP, buffer, L"NtCreateFile execution count", MB_OK);
 	}
 	break;
 	}

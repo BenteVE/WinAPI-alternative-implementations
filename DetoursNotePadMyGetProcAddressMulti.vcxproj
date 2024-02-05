@@ -159,9 +159,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Console.h" />
     <ClInclude Include="MyProcGetAddress.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Console.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="MyGetProcAddress.cpp" />
   </ItemGroup>
