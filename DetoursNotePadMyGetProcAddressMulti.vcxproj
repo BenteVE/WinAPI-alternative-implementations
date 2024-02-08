@@ -160,12 +160,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Console.h" />
-    <ClInclude Include="MyProcGetAddress.h" />
+    <ClInclude Include="GetModuleHandleCustom.h" />
+    <ClInclude Include="GetProcAddressCustom.h" />
+    <ClInclude Include="winternl_undoc.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="MyGetProcAddress.cpp" />
+    <ClCompile Include="GetModuleHandleCustom.cpp" />
+    <ClCompile Include="GetProcAddressCustom.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

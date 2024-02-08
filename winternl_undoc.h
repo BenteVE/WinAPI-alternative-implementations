@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Windows.h>
-#include <string>
-#include <codecvt> //for unicode to ascii conversion
+
+//#include <winternl.h>
 
 // These structures are only partially available in the official winternl.h header
 // but they can be found on the internet or through reverse engineering
@@ -12,8 +12,8 @@ typedef struct _UNICODE_STRING {
 	USHORT Length;
 	USHORT MaximumLength;
 	PWSTR  Buffer;
-} UNICODE_STRING, * PUNICODE_STRING;
-
+} UNICODE_STRING;
+typedef UNICODE_STRING* PUNICODE_STRING;
 
 // PEB loader data structure
 typedef struct _LDR_MODULE
@@ -48,16 +48,20 @@ typedef struct _PEB_LDR_DATA
 	HANDLE              ShutdownThreadId;
 } PEB_LDR_DATA, * PPEB_LDR_DATA;
 
-std::string UnicodeStringToAscii(UNICODE_STRING* unicode);
+typedef struct _OBJECT_ATTRIBUTES {
+	ULONG Length;
+	HANDLE RootDirectory;
+	PUNICODE_STRING ObjectName;
+	ULONG Attributes;
+	PVOID SecurityDescriptor;
+	PVOID SecurityQualityOfService;
+} OBJECT_ATTRIBUTES;
+typedef OBJECT_ATTRIBUTES* POBJECT_ATTRIBUTES;
 
-PLIST_ENTRY GetModListPtr();
-
-PIMAGE_NT_HEADERS GetNtHeader(LPCVOID ModuleBase);
-
-HMODULE MyGetModuleHandle(LPCSTR ModuleName);
-
-DWORD NameToOrdinal(HMODULE ModuleHandle, LPCSTR ProcName);
-
-FARPROC MyGetProcAddressInternal(HMODULE ModuleHandle, DWORD Ordinal);
-
-FARPROC createHook(LPCSTR dllName, LPCSTR functionName);
+typedef struct _IO_STATUS_BLOCK {
+	union {
+		NTSTATUS Status;
+		PVOID Pointer;
+	} DUMMYUNIONNAME;
+	ULONG_PTR Information;
+} IO_STATUS_BLOCK, * PIO_STATUS_BLOCK;

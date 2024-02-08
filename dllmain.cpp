@@ -1,7 +1,10 @@
 #include <Windows.h>
+#include "winternl_undoc.h"
 #include "detours.h"
 
-#include "MyProcGetAddress.h"
+#include "GetProcAddressCustom.h"
+#include "GetModuleHandleCustom.h"
+
 #include "Console.h"
 
 Console console;
@@ -35,7 +38,7 @@ BOOL WINAPI SetTextColorHook(HDC hdc, COLORREF color)
 /*--------------------------------------------------
 		ntdll.dll NtCreateFile hook
 ----------------------------------------------------*/
-#include <winternl.h>
+
 
 typedef NTSTATUS(WINAPI* TrueNtCreateFile)(PHANDLE FileHandle, ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocationSize,
@@ -48,6 +51,33 @@ BOOL WINAPI NtCreateFileHook(PHANDLE FileHandle, ACCESS_MASK DesiredAccess, POBJ
 {
 	//fprintf(console.stream, "NtCreateFile created file with handle: %p\n", *FileHandle);
 	return trueNtCreateFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes, ShareAccess, CreateDisposition, CreateOptions, EaBuffer, EaLength);
+}
+
+FARPROC createHook(LPCSTR dllName, LPCSTR functionName) {
+
+	HMODULE moduleHandle = GetModuleHandleCustom(dllName);
+
+	// Check if the module handle is retrieved correctly
+	if (moduleHandle == nullptr) {
+		return NULL;
+	}
+
+	DWORD ordinal = NameToOrdinal(moduleHandle, functionName);
+
+	// Check if the ordinal is retrieved correctly
+	if (ordinal == 0xFFFFFFFF) {
+		return NULL;
+	}
+
+	FARPROC trueFunction = GetProcAddressCustom(moduleHandle, ordinal);
+
+	// Check if the Address is retrieved correctly
+	if (trueFunction == nullptr) {
+		return NULL;
+	}
+
+	return trueFunction;
+
 }
 
 /*--------------------------------------------------
