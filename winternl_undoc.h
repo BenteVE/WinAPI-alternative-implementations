@@ -47,21 +47,3 @@ typedef struct _PEB_LDR_DATA
 	BOOLEAN             ShutdownInProgress;
 	HANDLE              ShutdownThreadId;
 } PEB_LDR_DATA, * PPEB_LDR_DATA;
-
-typedef struct _OBJECT_ATTRIBUTES {
-	ULONG Length;
-	HANDLE RootDirectory;
-	PUNICODE_STRING ObjectName;
-	ULONG Attributes;
-	PVOID SecurityDescriptor;
-	PVOID SecurityQualityOfService;
-} OBJECT_ATTRIBUTES;
-typedef OBJECT_ATTRIBUTES* POBJECT_ATTRIBUTES;
-
-typedef struct _IO_STATUS_BLOCK {
-	union {
-		NTSTATUS Status;
-		PVOID Pointer;
-	} DUMMYUNIONNAME;
-	ULONG_PTR Information;
-} IO_STATUS_BLOCK, * PIO_STATUS_BLOCK;

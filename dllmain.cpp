@@ -36,51 +36,6 @@ BOOL WINAPI SetTextColorHook(HDC hdc, COLORREF color)
 }
 
 /*--------------------------------------------------
-		ntdll.dll NtCreateFile hook
-----------------------------------------------------*/
-
-
-typedef NTSTATUS(WINAPI* TrueNtCreateFile)(PHANDLE FileHandle, ACCESS_MASK DesiredAccess,
-	POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocationSize,
-	ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer, ULONG EaLength);
-
-TrueNtCreateFile trueNtCreateFile = NULL;
-
-BOOL WINAPI NtCreateFileHook(PHANDLE FileHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK
-	IoStatusBlock, PLARGE_INTEGER AllocationSize, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer, ULONG EaLength)
-{
-	//fprintf(console.stream, "NtCreateFile created file with handle: %p\n", *FileHandle);
-	return trueNtCreateFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes, ShareAccess, CreateDisposition, CreateOptions, EaBuffer, EaLength);
-}
-
-FARPROC createHook(LPCSTR dllName, LPCSTR functionName) {
-
-	HMODULE moduleHandle = GetModuleHandleCustom(dllName);
-
-	// Check if the module handle is retrieved correctly
-	if (moduleHandle == nullptr) {
-		return NULL;
-	}
-
-	DWORD ordinal = NameToOrdinal(moduleHandle, functionName);
-
-	// Check if the ordinal is retrieved correctly
-	if (ordinal == 0xFFFFFFFF) {
-		return NULL;
-	}
-
-	FARPROC trueFunction = GetProcAddressCustom(moduleHandle, ordinal);
-
-	// Check if the Address is retrieved correctly
-	if (trueFunction == nullptr) {
-		return NULL;
-	}
-
-	return trueFunction;
-
-}
-
-/*--------------------------------------------------
 		DllMain
 ----------------------------------------------------*/
 
@@ -95,26 +50,40 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 			return FALSE;
 		}
 
-		trueMessageBox = (TrueMessageBox)createHook("user32.dll", "MessageBoxW"); //Notepad++ 32-bit uses MessageBoxW
-		if (trueMessageBox == NULL)
-			break;
+		// Compare the addresses returned by our custom function with the ones from the Windows API function
+		
+		LPCSTR user32 = "user32.dll";
+		LPCSTR messageBox = "MessageBoxW"; //Notepad++ 32-bit uses MessageBoxW
 
-		trueSetTextColor = (TrueSetTextColor)createHook("gdi32.dll", "SetTextColor");
-		if (trueSetTextColor == NULL)
-			break;
 
-		trueNtCreateFile = (TrueNtCreateFile)createHook("ntdll.dll", "NtCreateFile");
-		if (trueNtCreateFile == NULL)
-			break;
+		HMODULE h_user32 = GetModuleHandleCustom(user32);
 
+		// Check if the module handle is retrieved correctly
+		if (h_user32 == nullptr) {
+			fprintf(console.stream, "GetModuleHandleCustom failed to retrieve a handle for module %s", user32);
+			return FALSE;
+		}
+		fprintf(console.stream, "GetModuleHandleCustom retrieved handle %p for module %s", h_user32, user32);
+
+		trueMessageBox = (TrueMessageBox)GetProcAddressCustom(h_user32, messageBox);
+
+		// Check if the Address is retrieved correctly
+		if (trueMessageBox == nullptr) {
+			fprintf(console.stream, "GetProcAddressCustom failed to retrieve an address for function %s", messageBox);
+			return FALSE;
+		}
+		fprintf(console.stream, "GetProcAddressCustom failed to retrieve an address for function %s", messageBox);
+
+
+		LPCSTR gdi32 = "gdi32.dll";
+		LPCSTR setTextColor = "SetTextColor";
 
 		DetourTransactionBegin();
 		DetourUpdateThread(GetCurrentThread());
 
 		// Attach all detours
 		DetourAttach(&(PVOID&)trueMessageBox, MessageBoxHook);
-		DetourAttach(&(PVOID&)trueSetTextColor, SetTextColorHook);
-		DetourAttach(&(PVOID&)trueNtCreateFile, NtCreateFileHook);
+		//DetourAttach(&(PVOID&)trueSetTextColor, SetTextColorHook);
 
 		LONG lError = DetourTransactionCommit();
 		if (lError != NO_ERROR) {
@@ -131,8 +100,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
 		//Detach all detours
 		DetourDetach(&(PVOID&)trueMessageBox, MessageBoxHook);
-		DetourDetach(&(PVOID&)trueSetTextColor, SetTextColorHook);
-		DetourDetach(&(PVOID&)trueNtCreateFile, NtCreateFileHook);
+		//DetourDetach(&(PVOID&)trueSetTextColor, SetTextColorHook);
 
 		LONG lError = DetourTransactionCommit();
 		if (lError != NO_ERROR) {

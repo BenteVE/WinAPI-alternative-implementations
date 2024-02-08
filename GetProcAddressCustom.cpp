@@ -64,30 +64,38 @@ DWORD NameToOrdinal(HMODULE ModuleHandle, LPCSTR ProcName)
 	return NameOrdinalsArray[NameIndex] + ExportDir->Base;
 }
 
-
-// Search the Export Address Table for an export with the given orginal
-FARPROC GetProcAddressCustom(HMODULE ModuleHandle, DWORD Ordinal)
+// Search the Export Address Table for an export with the given name
+FARPROC GetProcAddressCustom(HMODULE moduleHandle, LPCSTR procName)
 {
-	const auto NtHeader = GetNtHeader(ModuleHandle);
+	DWORD ordinal = NameToOrdinal(moduleHandle, procName);
+
+	// Check if the ordinal is retrieved correctly
+	if (ordinal == 0xFFFFFFFF) {
+		return nullptr;
+	}
+
+	const auto NtHeader = GetNtHeader(moduleHandle);
 	if (!NtHeader)
 		return nullptr;
+
+	// Search the Export Address Table for an export with the given orginal
 
 	// RVA of export table
 	const auto ExportOffset = NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
 	const auto ExportSize = NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
 
 	// Pointer to export table and export functions array
-	const auto ExportDir = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(reinterpret_cast<UINT_PTR>(ModuleHandle) + ExportOffset);
-	const auto FunctionArray = reinterpret_cast<PDWORD>(reinterpret_cast<UINT_PTR>(ModuleHandle) + ExportDir->AddressOfFunctions);
+	const auto ExportDir = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(reinterpret_cast<UINT_PTR>(moduleHandle) + ExportOffset);
+	const auto FunctionArray = reinterpret_cast<PDWORD>(reinterpret_cast<UINT_PTR>(moduleHandle) + ExportDir->AddressOfFunctions);
 
 	// Check if requested ordinal # is valid
-	if ((Ordinal < ExportDir->Base) ||
-		((Ordinal - ExportDir->Base) > ExportDir->NumberOfFunctions))
+	if ((ordinal < ExportDir->Base) ||
+		((ordinal - ExportDir->Base) > ExportDir->NumberOfFunctions))
 		return nullptr;
 
 	// This works because the export table cannot have gaps
 	// (if the ordinal is a gap then the corresponding export table entry contains zero)
-	auto FunctionAddr = reinterpret_cast<FARPROC>(reinterpret_cast<UINT_PTR>(ModuleHandle) + FunctionArray[Ordinal - ExportDir->Base]);
+	auto FunctionAddr = reinterpret_cast<FARPROC>(reinterpret_cast<UINT_PTR>(moduleHandle) + FunctionArray[ordinal - ExportDir->Base]);
 
 	// Check if the exported function is not a forwarder
 	// A forwarder looks just like a regular exported function, except that the entry in the ordinal export table points to another DLL
@@ -111,7 +119,7 @@ FARPROC GetProcAddressCustom(HMODULE ModuleHandle, DWORD Ordinal)
 			return nullptr;
 
 		// Get address of the function
-		FunctionAddr = GetProcAddressCustom(ForwardedModHandle, NameToOrdinal(ForwardedModHandle, ForwardedFunctionName));
+		FunctionAddr = GetProcAddressCustom(ForwardedModHandle, ForwardedFunctionName);
 
 		// Free our handle to the module, this doesn't automatically unload the library!
 		FreeLibrary(ForwardedModHandle);
