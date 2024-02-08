@@ -89,7 +89,8 @@ FARPROC GetProcAddressCustom(HMODULE ModuleHandle, DWORD Ordinal)
 	// (if the ordinal is a gap then the corresponding export table entry contains zero)
 	auto FunctionAddr = reinterpret_cast<FARPROC>(reinterpret_cast<UINT_PTR>(ModuleHandle) + FunctionArray[Ordinal - ExportDir->Base]);
 
-	// Export forward ?
+	// Check if the exported function is not a forwarder
+	// A forwarder looks just like a regular exported function, except that the entry in the ordinal export table points to another DLL
 	if ((reinterpret_cast<UINT_PTR>(FunctionAddr) >= reinterpret_cast<UINT_PTR>(ExportDir)) &&
 		(reinterpret_cast<UINT_PTR>(FunctionAddr) < (reinterpret_cast<UINT_PTR>(ExportDir) + ExportSize)))
 	{
@@ -102,13 +103,17 @@ FARPROC GetProcAddressCustom(HMODULE ModuleHandle, DWORD Ordinal)
 		ForwardedModule.assign(reinterpret_cast<const char*>(FunctionAddr), ForwardedFunctionName - reinterpret_cast<char*>(FunctionAddr));
 		ForwardedFunctionName++;
 
-		// Load library
+		// Module handles are not global or inheritable. 
+		// A call to LoadLibrary by one process does not produce a handle that another process can use — for example, in calling GetProcAddress. 
+		// The other process must make its own call to LoadLibrary for the module before calling GetProcAddress.
 		const auto ForwardedModHandle = LoadLibraryA(ForwardedModule.c_str());
 		if (!ForwardedModHandle)
 			return nullptr;
 
-		// Get addr of function
+		// Get address of the function
 		FunctionAddr = GetProcAddressCustom(ForwardedModHandle, NameToOrdinal(ForwardedModHandle, ForwardedFunctionName));
+
+		// Free our handle to the module, this doesn't automatically unload the library!
 		FreeLibrary(ForwardedModHandle);
 	}
 
