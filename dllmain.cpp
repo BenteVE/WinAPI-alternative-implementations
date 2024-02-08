@@ -35,6 +35,46 @@ BOOL WINAPI SetTextColorHook(HDC hdc, COLORREF color)
 	return trueSetTextColor(hdc, 0x00FF0000); // rgb color blue
 }
 
+
+FARPROC getTrueAddress(LPCSTR moduleName, LPCSTR procName) {
+
+	HMODULE h_module_custom = GetModuleHandleCustom(moduleName);
+	if (h_module_custom == nullptr) {
+		fprintf(console.stream, "GetModuleHandleCustom failed to retrieve a handle for module %s\n", moduleName);
+		return nullptr;
+	}
+	fprintf(console.stream, "GetModuleHandleCustom retrieved handle %p for module %s\n", h_module_custom, moduleName);
+
+	// Compare results of custom function with API function
+	HMODULE h_module = GetModuleHandleCustom(moduleName);
+	if (h_module == nullptr) {
+		fprintf(console.stream, "GetModuleHandle failed to retrieve a handle for module %s\n", moduleName);
+		return nullptr;
+	}
+	fprintf(console.stream, "GetModuleHandle retrieved handle %p for module %s\n", h_module, moduleName);
+
+
+
+	FARPROC	address_custom = GetProcAddressCustom(h_module, procName);
+	if (address_custom == nullptr) {
+		fprintf(console.stream, "GetProcAddressCustom failed to retrieve an address for function %s\n", procName);
+		return nullptr;
+	}
+	fprintf(console.stream, "GetProcAddressCustom retrieved address %p for function %s\n", address_custom, procName);
+
+	// Compare results of custom function with API function
+	FARPROC	address = GetProcAddressCustom(h_module, procName);
+	if (address == nullptr) {
+		fprintf(console.stream, "GetProcAddress failed to retrieve an address for function %s\n", procName);
+		return nullptr;
+	}
+	fprintf(console.stream, "GetProcAddress retrieved address %p for function %s\n", address, procName);
+
+
+	return address_custom;
+}
+
+
 /*--------------------------------------------------
 		DllMain
 ----------------------------------------------------*/
@@ -50,46 +90,29 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 			return FALSE;
 		}
 
-		// Compare the addresses returned by our custom function with the ones from the Windows API function
-		
-		LPCSTR user32 = "user32.dll";
-		LPCSTR messageBox = "MessageBoxW"; //Notepad++ 32-bit uses MessageBoxW
-
-
-		HMODULE h_user32 = GetModuleHandleCustom(user32);
-
-		// Check if the module handle is retrieved correctly
-		if (h_user32 == nullptr) {
-			fprintf(console.stream, "GetModuleHandleCustom failed to retrieve a handle for module %s", user32);
+		trueMessageBox = (TrueMessageBox)getTrueAddress("user32.dll", "MessageBoxW"); //Notepad++ 32-bit uses MessageBoxW
+		if (!trueMessageBox) {
 			return FALSE;
 		}
-		fprintf(console.stream, "GetModuleHandleCustom retrieved handle %p for module %s", h_user32, user32);
 
-		trueMessageBox = (TrueMessageBox)GetProcAddressCustom(h_user32, messageBox);
-
-		// Check if the Address is retrieved correctly
-		if (trueMessageBox == nullptr) {
-			fprintf(console.stream, "GetProcAddressCustom failed to retrieve an address for function %s", messageBox);
+		trueSetTextColor = (TrueSetTextColor)getTrueAddress("gdi32.dll", "SetTextColor");
+		if (!trueSetTextColor) {
 			return FALSE;
 		}
-		fprintf(console.stream, "GetProcAddressCustom failed to retrieve an address for function %s", messageBox);
-
-
-		LPCSTR gdi32 = "gdi32.dll";
-		LPCSTR setTextColor = "SetTextColor";
 
 		DetourTransactionBegin();
 		DetourUpdateThread(GetCurrentThread());
 
 		// Attach all detours
 		DetourAttach(&(PVOID&)trueMessageBox, MessageBoxHook);
-		//DetourAttach(&(PVOID&)trueSetTextColor, SetTextColorHook);
+		DetourAttach(&(PVOID&)trueSetTextColor, SetTextColorHook);
 
 		LONG lError = DetourTransactionCommit();
 		if (lError != NO_ERROR) {
 			fprintf(console.stream, "Failed to attach the hooks\n");
 			return FALSE;
 		}
+		fprintf(console.stream, "Hooks installed successfully\n");
 	}
 	break;
 
@@ -100,7 +123,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
 		//Detach all detours
 		DetourDetach(&(PVOID&)trueMessageBox, MessageBoxHook);
-		//DetourDetach(&(PVOID&)trueSetTextColor, SetTextColorHook);
+		DetourDetach(&(PVOID&)trueSetTextColor, SetTextColorHook);
 
 		LONG lError = DetourTransactionCommit();
 		if (lError != NO_ERROR) {
