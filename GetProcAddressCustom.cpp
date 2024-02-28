@@ -1,6 +1,10 @@
 #include "GetProcAddressCustom.h"
 
-/* Used to get the NTHeader of a PE file */
+// A custom implementation of the GetProcAddress() function of the Windows API
+// that traverses the Export Address Table (EAT)
+// https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#export-directory-table
+
+// Convert a pointer to the base of a PE module into a pointer to the IMAGE_NT_HEADER struct
 PIMAGE_NT_HEADERS GetNtHeader(LPVOID ModuleBase)
 {
 	PIMAGE_DOS_HEADER DosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(ModuleBase);
