@@ -41,28 +41,33 @@ PLIST_ENTRY GetModListPtr()
 	return ModList;
 }
 
-/* Unicode to Ascii conversion */
-std::string UnicodeStringToAscii(UNICODE_STRING* unicode) {
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+// Convert the UNICODE_STRING struct to a narrow Ascii compatible c-string
+	std::string UnicodeStringToAscii(UNICODE_STRING* unicode) {
+
+	// Convert the unicode struct to a wide string
 	std::wstring wstr(unicode->Buffer, unicode->Length);
 	const std::wstring wide_string = wstr;
+
+	// Convert the wide string to a narrow string
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 	const std::string utf8_string = converter.to_bytes(wide_string);
+
 	return utf8_string;
 }
 
-/* Our implementation of the GetModuleHandle function */
+// Custom implementation of the GetModuleHandle() function
 HMODULE GetModuleHandleCustom(LPCSTR ModuleName)
 {
-	const auto ModList = GetModListPtr();
+	PLIST_ENTRY ModList = GetModListPtr();
 
-	for (auto ModEntry = ModList->Flink; ModList != ModEntry; ModEntry = ModEntry->Flink)
+	for (PLIST_ENTRY ModEntry = ModList->Flink; ModList != ModEntry; ModEntry = ModEntry->Flink)
 	{
-		auto LdrMod = reinterpret_cast<PLDR_MODULE>(ModEntry);
+		PLDR_MODULE LdrMod = reinterpret_cast<PLDR_MODULE>(ModEntry);
 
 		if (LdrMod->BaseAddress)
 		{
-			auto TmpModuleName = UnicodeStringToAscii(&LdrMod->BaseDllName);
-			auto TmpModuleNameFull = UnicodeStringToAscii(&LdrMod->FullDllName);
+			std::string TmpModuleName = UnicodeStringToAscii(&LdrMod->BaseDllName);
+			std::string TmpModuleNameFull = UnicodeStringToAscii(&LdrMod->FullDllName);
 
 			if (!_stricmp(TmpModuleName.c_str(), ModuleName) ||
 				!_stricmp(TmpModuleNameFull.c_str(), ModuleName))
