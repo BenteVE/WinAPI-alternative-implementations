@@ -1,13 +1,13 @@
 #include "GetProcAddressCustom.h"
 
 /* Used to get the NTHeader of a PE file */
-PIMAGE_NT_HEADERS GetNtHeader(LPCVOID ModuleBase)
+PIMAGE_NT_HEADERS GetNtHeader(LPVOID ModuleBase)
 {
-	auto DosHeader = static_cast<const _IMAGE_DOS_HEADER*>(ModuleBase);
+	PIMAGE_DOS_HEADER DosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(ModuleBase);
 
 	if (DosHeader->e_magic == IMAGE_DOS_SIGNATURE)
 	{
-		const auto NtHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<uintptr_t>(DosHeader) + DosHeader->e_lfanew);
+		PIMAGE_NT_HEADERS NtHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<uintptr_t>(DosHeader) + DosHeader->e_lfanew);
 		if (NtHeader->Signature == LOWORD(IMAGE_NT_SIGNATURE))
 			return NtHeader;
 	}
@@ -26,24 +26,24 @@ DWORD NameToOrdinal(HMODULE ModuleHandle, LPCSTR ProcName)
 		return 0xFFFFFFFF;
 
 	// RVA of export table
-	const auto ExportOffset = NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+	const DWORD ExportOffset = NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
 
 	// Pointer to export table
-	const auto ExportDir = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(reinterpret_cast<UINT_PTR>(ModuleHandle) + ExportOffset);
+	const PIMAGE_EXPORT_DIRECTORY ExportDir = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(reinterpret_cast<UINT_PTR>(ModuleHandle) + ExportOffset);
 
 	// Pointer and length of AddressOfNames array
-	const auto NamesArray = reinterpret_cast<PDWORD>(reinterpret_cast<UINT_PTR>(ModuleHandle) + ExportDir->AddressOfNames);
+	const PDWORD NamesArray = reinterpret_cast<PDWORD>(reinterpret_cast<UINT_PTR>(ModuleHandle) + ExportDir->AddressOfNames);
 
 	// Empty names array
 	if (ExportDir->NumberOfNames == 0)
 		return 0xFFFFFFFF;
 
 	// Pointer to AddressOfNameOrdinals array
-	const auto NameOrdinalsArray = reinterpret_cast<PWORD>(reinterpret_cast<UINT_PTR>(ModuleHandle) + ExportDir->AddressOfNameOrdinals);
+	const PWORD NameOrdinalsArray = reinterpret_cast<PWORD>(reinterpret_cast<UINT_PTR>(ModuleHandle) + ExportDir->AddressOfNameOrdinals);
 
 	// Search for name of function in the NamesArray
-	WORD NameIndex = 0;
-	auto FoundName = FALSE;
+	DWORD NameIndex = 0;
+	BOOL FoundName = FALSE;
 	for (DWORD I = 0; I < ExportDir->NumberOfNames; I++)
 	{
 		const auto Name = reinterpret_cast<const char*>(reinterpret_cast<UINT_PTR>(ModuleHandle) + NamesArray[I]);
@@ -74,19 +74,19 @@ FARPROC GetProcAddressCustom(HMODULE moduleHandle, LPCSTR procName)
 		return nullptr;
 	}
 
-	const auto NtHeader = GetNtHeader(moduleHandle);
+	const PIMAGE_NT_HEADERS NtHeader = GetNtHeader(moduleHandle);
 	if (!NtHeader)
 		return nullptr;
 
 	// Search the Export Address Table for an export with the given orginal
 
 	// RVA of export table
-	const auto ExportOffset = NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
-	const auto ExportSize = NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+	const DWORD ExportOffset = NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+	const DWORD ExportSize = NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
 
 	// Pointer to export table and export functions array
-	const auto ExportDir = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(reinterpret_cast<UINT_PTR>(moduleHandle) + ExportOffset);
-	const auto FunctionArray = reinterpret_cast<PDWORD>(reinterpret_cast<UINT_PTR>(moduleHandle) + ExportDir->AddressOfFunctions);
+	const PIMAGE_EXPORT_DIRECTORY ExportDir = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(reinterpret_cast<UINT_PTR>(moduleHandle) + ExportOffset);
+	const PDWORD FunctionArray = reinterpret_cast<PDWORD>(reinterpret_cast<UINT_PTR>(moduleHandle) + ExportDir->AddressOfFunctions);
 
 	// Check if requested ordinal # is valid
 	if ((ordinal < ExportDir->Base) ||
@@ -95,14 +95,14 @@ FARPROC GetProcAddressCustom(HMODULE moduleHandle, LPCSTR procName)
 
 	// This works because the export table cannot have gaps
 	// (if the ordinal is a gap then the corresponding export table entry contains zero)
-	auto FunctionAddr = reinterpret_cast<FARPROC>(reinterpret_cast<UINT_PTR>(moduleHandle) + FunctionArray[ordinal - ExportDir->Base]);
+	FARPROC FunctionAddr = reinterpret_cast<FARPROC>(reinterpret_cast<UINT_PTR>(moduleHandle) + FunctionArray[ordinal - ExportDir->Base]);
 
 	// Check if the exported function is not a forwarder
 	// A forwarder looks just like a regular exported function, except that the entry in the ordinal export table points to another DLL
 	if ((reinterpret_cast<UINT_PTR>(FunctionAddr) >= reinterpret_cast<UINT_PTR>(ExportDir)) &&
 		(reinterpret_cast<UINT_PTR>(FunctionAddr) < (reinterpret_cast<UINT_PTR>(ExportDir) + ExportSize)))
 	{
-		auto ForwardedFunctionName = strchr(reinterpret_cast<const char*>(FunctionAddr), '.');
+		const char* ForwardedFunctionName = strchr(reinterpret_cast<const char*>(FunctionAddr), '.');
 		if (!ForwardedFunctionName)
 			return nullptr;
 
@@ -114,7 +114,7 @@ FARPROC GetProcAddressCustom(HMODULE moduleHandle, LPCSTR procName)
 		// Module handles are not global or inheritable. 
 		// A call to LoadLibrary by one process does not produce a handle that another process can use — for example, in calling GetProcAddress. 
 		// The other process must make its own call to LoadLibrary for the module before calling GetProcAddress.
-		const auto ForwardedModHandle = LoadLibraryA(ForwardedModule.c_str());
+		HMODULE ForwardedModHandle = LoadLibraryA(ForwardedModule.c_str());
 		if (!ForwardedModHandle)
 			return nullptr;
 
