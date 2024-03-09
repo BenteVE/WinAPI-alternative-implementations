@@ -147,7 +147,6 @@
     <ClInclude Include="GetPEB.h" />
     <ClInclude Include="GetProcAddressCustom.h" />
     <ClInclude Include="ntdll.h" />
-    <ClInclude Include="winternl_undoc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

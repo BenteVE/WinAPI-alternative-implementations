@@ -62,16 +62,16 @@ HMODULE GetModuleHandleCustom(LPCSTR ModuleName)
 
 	for (PLIST_ENTRY ModEntry = ModList->Flink; ModList != ModEntry; ModEntry = ModEntry->Flink)
 	{
-		PLDR_MODULE LdrMod = reinterpret_cast<PLDR_MODULE>(ModEntry);
+		PLDR_DATA_TABLE_ENTRY LdrMod = reinterpret_cast<PLDR_DATA_TABLE_ENTRY>(ModEntry);
 
-		if (LdrMod->BaseAddress)
+		if (LdrMod->DllBase)
 		{
 			std::string TmpModuleName = UnicodeStringToAscii(&LdrMod->BaseDllName);
 			std::string TmpModuleNameFull = UnicodeStringToAscii(&LdrMod->FullDllName);
 
 			if (!_stricmp(TmpModuleName.c_str(), ModuleName) ||
 				!_stricmp(TmpModuleNameFull.c_str(), ModuleName))
-				return static_cast<HMODULE>(LdrMod->BaseAddress); // Module Handle == BaseAddress of that module
+				return static_cast<HMODULE>(LdrMod->DllBase); // Module Handle == base address of that module
 		}
 	}
 

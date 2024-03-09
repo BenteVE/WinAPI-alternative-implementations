@@ -7,4 +7,6 @@ int main()
     std::cout << std::hex << get_PEB_asm() << std::endl;
     std::cout << std::hex << get_PEB_readword() << std::endl;
     std::cout << std::hex << get_PEB_NtQuery(GetCurrentProcess()) << std::endl;
+
+    std::cout << "Alternative ways to get a Module Handle (= base address):" << std::endl;
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "winternl_undoc.h"
+#include "ntdll.h"
 #include <string>
 #include <codecvt> //for unicode to ascii conversion
 

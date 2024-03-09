@@ -35,9 +35,6 @@
     <ClInclude Include="GetProcAddressCustom.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="winternl_undoc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GetPEB.h">
       <Filter>Header Files</Filter>
     </ClInclude>

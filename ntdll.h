@@ -1,3 +1,10 @@
+// Header file with undocumented all structures we need to make our alternative function work
+// Source: https ://github.com/x64dbg/x64dbg/blob/development/src/dbg/ntdll/ntdll.h
+
+// Alternatively, these structures are only partially available in the official winternl.h header
+// but they can be found on the internet or through reverse engineering
+// https://github.com/wine-mirror/wine/blob/master/include/winternl.h
+
 #pragma once
 
 #ifndef _NTDLL_H
