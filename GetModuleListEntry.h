@@ -2,7 +2,7 @@
 
 #include "ntdll.h"
 
-#ifdef _WIN32
+#ifndef _WIN64
 PPEB_LDR_DATA GetLdrDataAsm(PPEB peb);
 PLIST_ENTRY GetListEntryAsm(PPEB_LDR_DATA ldr);
 #endif

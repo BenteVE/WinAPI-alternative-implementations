@@ -2,7 +2,7 @@
 
 // Traverse PEB to PPEB_LDR_DATA using assembly
 // Note: this function only works in x86 because the MSVC compiler doesn't support assembly in x64
-#ifdef _WIN32
+#ifndef _WIN64
 PPEB_LDR_DATA GetLdrDataAsm(PPEB peb)
 {
 	PPEB_LDR_DATA ldr; // Pointer to PPEB_LDR_DATA structure
@@ -29,7 +29,7 @@ PPEB_LDR_DATA GetLdrDataStruct(PPEB peb)
 
 // Traverse PPEB_LDR_DATA get a LIST_ENTRY using assembly
 // Note: this function only works in x86 because the MSVC compiler doesn't support assembly in x64
-#ifdef _WIN32
+#ifndef _WIN64
 PLIST_ENTRY GetListEntryAsm(PPEB_LDR_DATA ldr)
 {
 	PLIST_ENTRY head; // Pointer to a LIST_ENTRY, this is the first  is part of a double linked list of contains pointers toPointer to _LDR_MODULE structure
