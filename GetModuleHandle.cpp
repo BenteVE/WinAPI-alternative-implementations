@@ -3,9 +3,10 @@
 // Custom implementation of the GetModuleHandle() function traversing the Linked lists in the PEB structure
 HMODULE GetModuleHandleListEntry(LPCWSTR moduleName, PLIST_ENTRY head)
 {
-	PLIST_ENTRY ModList = head;
-
-	for (PLIST_ENTRY ModEntry = ModList->Flink; ModList != ModEntry; ModEntry = ModEntry->Flink)
+	// Note: no matter in which list we got the head in the PPEB_LDR_DATA (InLoadOrderModuleList, InMemoryOrderList, InInitializationOrderList) 
+	// this code always traverses in load order because the first part of the PLDR_DATA_TABLE_ENTRY struct is the InLoadOrderLinks
+	// TODO: try changing this traversal to: cast first, then traverse from the PLDR_DATA_TABLE_ENTRY
+	for (PLIST_ENTRY ModEntry = head->Flink; head != ModEntry; ModEntry = ModEntry->Flink)
 	{
 		PLDR_DATA_TABLE_ENTRY LdrMod = reinterpret_cast<PLDR_DATA_TABLE_ENTRY>(ModEntry);
 
