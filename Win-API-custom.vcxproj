@@ -146,7 +146,6 @@
     <ClInclude Include="GetModuleHandleCustom.h" />
     <ClInclude Include="GetPEB.h" />
     <ClInclude Include="GetProcAddressCustom.h" />
-    <ClInclude Include="ntapi.h" />
     <ClInclude Include="ntdll.h" />
     <ClInclude Include="winternl_undoc.h" />
   </ItemGroup>

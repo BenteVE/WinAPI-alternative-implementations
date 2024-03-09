@@ -1,14 +1,7 @@
 // A small collection of alternative ways to get a pointer to the PEB structure
 // - the Process Environment Block (PEB) https://en.wikipedia.org/wiki/Process_Environment_Block
-// 
-// A custom implementation of the GetModuleHandle() function of the Windows API
-// that uses assembly code to traverse:
-
-
 
 #include "GetPEB.h"
-
-
 
 // A function to get a pointer to the PEB from the TIB using assembly
 // - the Thread Information Block (TIB)  https://en.wikipedia.org/wiki/Win32_Thread_Information_Block
@@ -34,8 +27,7 @@ PPEB get_PEB_asm()
 }
 #endif _WIN64
 
-
-// A function to get a pointer to the PEB using the functions in winnt.h
+// A function to get a pointer to the PEB using the read functions in winnt.h
 PPEB get_PEB_readword()
 {
 #ifdef _WIN64
@@ -47,38 +39,21 @@ PPEB get_PEB_readword()
 }
 
 // A function to get a pointer to the PEB using NtQueryInformationProcess
-PPEB get_PEB_NtQuery()
+// (Usable for an external process)
+PPEB get_PEB_NtQuery(HANDLE hProc)
 {
 	PROCESS_BASIC_INFORMATION pbi; //contains PEB pointer
 
 	// Only the declaration of NtQueryInformationProcess is included in ntdll.h, 
 	// to get access to the implemented function, we use GetProcAddress()
-	tNtQueryInformationProcess NtQueryInformationProcess =
-		(tNtQueryInformationProcess)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQueryInformationProcess");
-
-	NTSTATUS status = NtQueryInformationProcess(GetCurrentProcess(), ProcessBasicInformation, &pbi, sizeof(pbi), 0);
-
-	if (NT_SUCCESS(status))
-		return pbi.PebBaseAddress;
-	
-	return nullptr;
-}
-
-// A function to get the PEB of an external process using NtQueryInformationProcess
-PEB get_PEB_NtQuery(HANDLE hProc)
-{
-	PROCESS_BASIC_INFORMATION pbi; //contains PEB pointer
-	PEB peb = { 0 };
-
+	// (ntdll.dll should always be loaded)
 	tNtQueryInformationProcess NtQueryInformationProcess =
 		(tNtQueryInformationProcess)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQueryInformationProcess");
 
 	NTSTATUS status = NtQueryInformationProcess(hProc, ProcessBasicInformation, &pbi, sizeof(pbi), 0);
 
 	if (NT_SUCCESS(status))
-	{
-		ReadProcessMemory(hProc, pbi.PebBaseAddress, &peb, sizeof(peb), 0);
-	}
-
-	return peb;
+		return pbi.PebBaseAddress;
+	
+	return nullptr;
 }
