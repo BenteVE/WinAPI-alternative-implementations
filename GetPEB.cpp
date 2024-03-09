@@ -50,11 +50,9 @@ PPEB get_PEB_readword()
 PPEB get_PEB_NtQuery()
 {
 	PROCESS_BASIC_INFORMATION pbi; //contains PEB pointer
-	PEB peb = { 0 };
 
-	// To get access to the NtQueryInformationProcess function,
-	// we need to get the address using GetProcAddress()
-	// ...
+	// Only the declaration of NtQueryInformationProcess is included in ntdll.h, 
+	// to get access to the implemented function, we use GetProcAddress()
 	tNtQueryInformationProcess NtQueryInformationProcess =
 		(tNtQueryInformationProcess)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQueryInformationProcess");
 
