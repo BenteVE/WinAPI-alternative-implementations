@@ -139,13 +139,13 @@
   <ItemGroup>
     <ClCompile Include="GetModuleHandle.cpp" />
     <ClCompile Include="GetPEB.cpp" />
-    <ClCompile Include="GetProcAddressCustom.cpp" />
+    <ClCompile Include="GetProcAddress.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GetModuleHandle.h" />
     <ClInclude Include="GetPEB.h" />
-    <ClInclude Include="GetProcAddressCustom.h" />
+    <ClInclude Include="GetProcAddress.h" />
     <ClInclude Include="ntdll.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

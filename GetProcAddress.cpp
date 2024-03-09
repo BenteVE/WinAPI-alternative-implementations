@@ -1,4 +1,4 @@
-#include "GetProcAddressCustom.h"
+#include "GetProcAddress.h"
 
 // A custom implementation of the GetProcAddress() function of the Windows API
 // that traverses the Export Address Table (EAT)
@@ -69,7 +69,7 @@ DWORD NameToOrdinal(HMODULE ModuleHandle, LPCSTR ProcName)
 }
 
 // Search the Export Address Table for an export with the given name
-FARPROC GetProcAddressCustom(HMODULE moduleHandle, LPCSTR procName)
+FARPROC GetProcAddressEAT(HMODULE moduleHandle, LPCSTR procName)
 {
 	DWORD ordinal = NameToOrdinal(moduleHandle, procName);
 
@@ -123,7 +123,7 @@ FARPROC GetProcAddressCustom(HMODULE moduleHandle, LPCSTR procName)
 			return nullptr;
 
 		// Get address of the function
-		FunctionAddr = GetProcAddressCustom(ForwardedModHandle, ForwardedFunctionName);
+		FunctionAddr = GetProcAddressEAT(ForwardedModHandle, ForwardedFunctionName);
 
 		// Free our handle to the module, this doesn't automatically unload the library!
 		FreeLibrary(ForwardedModHandle);

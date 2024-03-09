@@ -21,7 +21,7 @@
     <ClCompile Include="GetModuleHandle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GetProcAddressCustom.cpp">
+    <ClCompile Include="GetProcAddress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GetPEB.cpp">
@@ -32,7 +32,7 @@
     <ClInclude Include="GetModuleHandle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GetProcAddressCustom.h">
+    <ClInclude Include="GetProcAddress.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GetPEB.h">
