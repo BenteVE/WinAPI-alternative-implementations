@@ -27,6 +27,9 @@
     <ClCompile Include="GetPEB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GetModuleListEntry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GetModuleHandle.h">
@@ -39,6 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ntdll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GetModuleListEntry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -138,12 +138,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GetModuleHandle.cpp" />
+    <ClCompile Include="GetModuleListEntry.cpp" />
     <ClCompile Include="GetPEB.cpp" />
     <ClCompile Include="GetProcAddress.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GetModuleHandle.h" />
+    <ClInclude Include="GetModuleListEntry.h" />
     <ClInclude Include="GetPEB.h" />
     <ClInclude Include="GetProcAddress.h" />
     <ClInclude Include="ntdll.h" />
