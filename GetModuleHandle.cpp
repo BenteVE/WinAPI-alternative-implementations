@@ -1,4 +1,4 @@
-#include "GetModuleHandleCustom.h"
+#include "GetModuleHandle.h"
 
 // A custom implementation of the GetModuleHandle() function of the Windows API
 // that uses assembly code to traverse:

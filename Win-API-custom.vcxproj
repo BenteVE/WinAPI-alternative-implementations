@@ -137,13 +137,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="GetModuleHandleCustom.cpp" />
+    <ClCompile Include="GetModuleHandle.cpp" />
     <ClCompile Include="GetPEB.cpp" />
     <ClCompile Include="GetProcAddressCustom.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GetModuleHandleCustom.h" />
+    <ClInclude Include="GetModuleHandle.h" />
     <ClInclude Include="GetPEB.h" />
     <ClInclude Include="GetProcAddressCustom.h" />
     <ClInclude Include="ntdll.h" />

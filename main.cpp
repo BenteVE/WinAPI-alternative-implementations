@@ -1,6 +1,6 @@
 #include <iostream>
 #include "GetPEB.h"
-#include "GetModuleHandleCustom.h"
+#include "GetModuleHandle.h"
 
 int main()
 {
