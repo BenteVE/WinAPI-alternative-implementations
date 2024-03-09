@@ -2,10 +2,9 @@
 
 #include "ntdll.h"
 #include <string>
-#include <codecvt> //for unicode to ascii conversion
+#include <TlHelp32.h>
 
 PLIST_ENTRY GetModListPtr();
 
-std::string UnicodeStringToAscii(UNICODE_STRING* unicode);
-
-HMODULE GetModuleHandleCustom(LPCSTR ModuleName);
+HMODULE GetModuleHandleListEntry(LPCWSTR moduleName);
+HMODULE GetModuleHandleSnapshot(LPCWSTR moduleName, DWORD processId);

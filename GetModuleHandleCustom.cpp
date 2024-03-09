@@ -41,22 +41,8 @@ PLIST_ENTRY GetModListPtr()
 	return ModList;
 }
 
-// Convert the UNICODE_STRING struct to a narrow Ascii compatible c-string
-	std::string UnicodeStringToAscii(UNICODE_STRING* unicode) {
-
-	// Convert the unicode struct to a wide string
-	std::wstring wstr(unicode->Buffer, unicode->Length);
-	const std::wstring wide_string = wstr;
-
-	// Convert the wide string to a narrow string
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-	const std::string utf8_string = converter.to_bytes(wide_string);
-
-	return utf8_string;
-}
-
-// Custom implementation of the GetModuleHandle() function
-HMODULE GetModuleHandleCustom(LPCSTR ModuleName)
+// Custom implementation of the GetModuleHandle() function traversing the Linked lists in 
+HMODULE GetModuleHandleListEntry(LPCWSTR moduleName)
 {
 	PLIST_ENTRY ModList = GetModListPtr();
 
@@ -66,14 +52,36 @@ HMODULE GetModuleHandleCustom(LPCSTR ModuleName)
 
 		if (LdrMod->DllBase)
 		{
-			std::string TmpModuleName = UnicodeStringToAscii(&LdrMod->BaseDllName);
-			std::string TmpModuleNameFull = UnicodeStringToAscii(&LdrMod->FullDllName);
-
-			if (!_stricmp(TmpModuleName.c_str(), ModuleName) ||
-				!_stricmp(TmpModuleNameFull.c_str(), ModuleName))
+			if (_wcsicmp(LdrMod->BaseDllName.Buffer, moduleName) == 0 ||
+				_wcsicmp(LdrMod->FullDllName.Buffer, moduleName) == 0)
 				return static_cast<HMODULE>(LdrMod->DllBase); // Module Handle == base address of that module
 		}
 	}
 
 	return nullptr;
+}
+
+// Custom implementation for GetModuleHandle() function using CreateToolhelp32Snapshot
+HMODULE GetModuleHandleSnapshot(LPCWSTR moduleName, DWORD processId)
+{
+	HMODULE moduleBaseAddress = nullptr;
+	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processId);
+	if (hSnap != INVALID_HANDLE_VALUE)
+	{
+		MODULEENTRY32 moduleEntry{};
+		moduleEntry.dwSize = sizeof(moduleEntry);
+		if (Module32First(hSnap, &moduleEntry))
+		{
+			do
+			{
+				if (_wcsicmp(moduleEntry.szModule, moduleName) == 0)
+				{
+					moduleBaseAddress = (HMODULE)moduleEntry.modBaseAddr;
+					break;
+				}
+			} while (Module32Next(hSnap, &moduleEntry));
+		}
+	}
+	CloseHandle(hSnap);
+	return moduleBaseAddress;
 }
