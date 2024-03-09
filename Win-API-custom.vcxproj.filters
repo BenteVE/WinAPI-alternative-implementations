@@ -24,6 +24,9 @@
     <ClCompile Include="GetProcAddressCustom.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GetPEB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GetModuleHandleCustom.h">
@@ -33,6 +36,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="winternl_undoc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GetPEB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ntdll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ntapi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

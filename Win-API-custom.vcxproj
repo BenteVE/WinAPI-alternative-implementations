@@ -138,12 +138,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GetModuleHandleCustom.cpp" />
+    <ClCompile Include="GetPEB.cpp" />
     <ClCompile Include="GetProcAddressCustom.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GetModuleHandleCustom.h" />
+    <ClInclude Include="GetPEB.h" />
     <ClInclude Include="GetProcAddressCustom.h" />
+    <ClInclude Include="ntapi.h" />
+    <ClInclude Include="ntdll.h" />
     <ClInclude Include="winternl_undoc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
