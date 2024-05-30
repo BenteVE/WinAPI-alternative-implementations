@@ -50,7 +50,7 @@ DWORD NameToOrdinal(HMODULE ModuleHandle, LPCSTR ProcName)
 	BOOL FoundName = FALSE;
 	for (DWORD I = 0; I < ExportDir->NumberOfNames; I++)
 	{
-		const auto Name = reinterpret_cast<const char*>(reinterpret_cast<UINT_PTR>(ModuleHandle) + NamesArray[I]);
+		const auto Name = reinterpret_cast<const char *>(reinterpret_cast<UINT_PTR>(ModuleHandle) + NamesArray[I]);
 
 		if (!strcmp(Name, ProcName))
 		{
@@ -74,7 +74,8 @@ FARPROC GetProcAddressEAT(HMODULE moduleHandle, LPCSTR procName)
 	DWORD ordinal = NameToOrdinal(moduleHandle, procName);
 
 	// Check if the ordinal is retrieved correctly
-	if (ordinal == 0xFFFFFFFF) {
+	if (ordinal == 0xFFFFFFFF)
+	{
 		return nullptr;
 	}
 
@@ -106,17 +107,17 @@ FARPROC GetProcAddressEAT(HMODULE moduleHandle, LPCSTR procName)
 	if ((reinterpret_cast<UINT_PTR>(FunctionAddr) >= reinterpret_cast<UINT_PTR>(ExportDir)) &&
 		(reinterpret_cast<UINT_PTR>(FunctionAddr) < (reinterpret_cast<UINT_PTR>(ExportDir) + ExportSize)))
 	{
-		const char* ForwardedFunctionName = strchr(reinterpret_cast<const char*>(FunctionAddr), '.');
+		const char *ForwardedFunctionName = strchr(reinterpret_cast<const char *>(FunctionAddr), '.');
 		if (!ForwardedFunctionName)
 			return nullptr;
 
-		// Module (DLL) name and function name		
+		// Module (DLL) name and function name
 		std::string ForwardedModule;
-		ForwardedModule.assign(reinterpret_cast<const char*>(FunctionAddr), ForwardedFunctionName - reinterpret_cast<char*>(FunctionAddr));
+		ForwardedModule.assign(reinterpret_cast<const char *>(FunctionAddr), ForwardedFunctionName - reinterpret_cast<char *>(FunctionAddr));
 		ForwardedFunctionName++;
 
-		// Module handles are not global or inheritable. 
-		// A call to LoadLibrary by one process does not produce a handle that another process can use — for example, in calling GetProcAddress. 
+		// Module handles are not global or inheritable.
+		// A call to LoadLibrary by one process does not produce a handle that another process can use ï¿½ for example, in calling GetProcAddress.
 		// The other process must make its own call to LoadLibrary for the module before calling GetProcAddress.
 		HMODULE ForwardedModHandle = LoadLibraryA(ForwardedModule.c_str());
 		if (!ForwardedModHandle)
